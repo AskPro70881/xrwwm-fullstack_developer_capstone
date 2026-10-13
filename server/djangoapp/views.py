@@ -12,6 +12,7 @@ from django.http import JsonResponse
 from django.contrib.auth import login, authenticate
 import logging
 import json
+from pathlib import Path
 from django.views.decorators.csrf import csrf_exempt
 # from .populate import initiate
 
@@ -38,6 +39,11 @@ def login_user(request):
         data = {"userName": username, "status": "Authenticated"}
     return JsonResponse(data)
 
+@csrf_exempt
+def logout_user(request):
+    logout(request)
+    return JsonResponse({'status': 'Logged out'})
+
 # Create a `logout_request` view to handle sign out request
 # def logout_request(request):
 # ...
@@ -47,19 +53,71 @@ def login_user(request):
 # def registration(request):
 # ...
 
-# # Update the `get_dealerships` view to render the index page with
-# a list of dealerships
-# def get_dealerships(request):
-# ...
+def get_dealerships(request):
+    data_file = Path(__file__).resolve().parent.parent / 'database' / 'data' / 'dealerships.json'
+    with open(data_file, 'r') as f:
+        data = json.load(f)
+    return JsonResponse({'status': 200, 'dealers': data['dealerships']})
 
-# Create a `get_dealer_reviews` view to render the reviews of a dealer
-# def get_dealer_reviews(request,dealer_id):
-# ...
 
-# Create a `get_dealer_details` view to render the dealer details
-# def get_dealer_details(request, dealer_id):
-# ...
+def get_dealer_by_id(request, dealer_id):
+    data_file = Path(__file__).resolve().parent.parent / 'database' / 'data' / 'dealerships.json'
+    with open(data_file, 'r') as f:
+        data = json.load(f)
+    for dealer in data['dealerships']:
+        if dealer['id'] == dealer_id:
+            return JsonResponse({'status': 200, 'dealer': [dealer]})
+    return JsonResponse({'status': 404, 'dealer': []}, status=404)
 
-# Create a `add_review` view to submit a review
-# def add_review(request):
-# ...
+
+def get_dealer_reviews(request, dealer_id):
+    data_file = Path(__file__).resolve().parent.parent / 'database' / 'data' / 'reviews.json'
+    with open(data_file, 'r') as f:
+        data = json.load(f)
+    reviews = [
+        r for r in data.get('reviews', [])
+        if r.get('dealership') == dealer_id
+    ]
+    for review in reviews:
+        review['sentiment'] = 'neutral'
+    return JsonResponse({'status': 200, 'reviews': reviews})
+
+def get_car_makes(request):
+    import json
+    from pathlib import Path
+    from django.http import JsonResponse
+
+    data_file = Path(__file__).resolve().parent.parent / 'database' / 'data' / 'car_records.json'
+
+    with open(data_file, 'r') as f:
+        data = json.load(f)
+
+    return JsonResponse(data)
+
+@csrf_exempt
+def analyze_review(request):
+    import json
+    from django.http import JsonResponse
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    data = json.loads(request.body)
+    review = data.get('review', '')
+
+    positive_words = ['fantastic', 'great', 'excellent', 'good', 'wonderful', 'amazing', 'love']
+    negative_words = ['bad', 'poor', 'terrible', 'awful', 'hate', 'worst']
+
+    text = review.lower()
+    score = sum(word in text for word in positive_words) - sum(word in text for word in negative_words)
+    sentiment = 'positive' if score > 0 else ('negative' if score < 0 else 'neutral')
+
+    return JsonResponse({'review': review, 'sentiment': sentiment})
+
+
+def get_dealers_by_state(request, state):
+    data_file = Path(__file__).resolve().parent.parent / 'database' / 'data' / 'dealerships.json'
+    with open(data_file, 'r') as f:
+        data = json.load(f)
+    dealers = [d for d in data['dealerships'] if d.get('state', '').lower() == state.lower()]
+    return JsonResponse({'status': 200, 'dealers': dealers})
