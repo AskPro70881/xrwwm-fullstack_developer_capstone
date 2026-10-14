@@ -1,0 +1,39 @@
+name: 'Lint Code'
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lint_python:
+    name: Lint Python Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install flake8
+      - name: Print flake8 version
+        run: flake8 --version
+      - name: Lint with flake8
+        run: flake8 . --count --exit-zero --show-source --statistics
+
+  lint_js:
+    name: Lint JavaScript Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install JSHint
+        run: npm install jshint --global
+      - name: Lint JavaScript files
+        run: find ./server/database -name "*.js" -exec jshint {} + || true
