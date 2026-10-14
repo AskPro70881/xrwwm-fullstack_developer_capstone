@@ -1,0 +1,12 @@
+HTTP/1.1 200 OK
+Date: Wed, 14 Oct 2026 14:16:23 GMT
+Server: WSGIServer/0.2 CPython/3.10.12
+Content-Type: application/json
+X-Frame-Options: DENY
+Content-Length: 40
+Vary: Cookie
+X-Content-Type-Options: nosniff
+Referrer-Policy: same-origin
+Cross-Origin-Opener-Policy: same-origin
+
+{"userName": "", "status": "Logged out"}
